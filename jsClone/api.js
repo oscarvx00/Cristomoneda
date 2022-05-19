@@ -6,6 +6,9 @@ const uuid = require('uuid')
 const router = express.Router()
 const PORT = 50001
 const ngrok = require('ngrok')
+const { default: axios } = require('axios')
+const { json } = require('express/lib/response')
+const res = require('express/lib/response')
 
 let blockchain = new Blockchain()
 
@@ -50,6 +53,39 @@ app.get('/obtenerCadena', (req, res) => {
     })
 })
 
+app.get('/obtenerBloque/:id',(req,res) => {
+
+    const id  = req.params.id
+    
+    res.json({
+        bloque: blockchain.cadena.find(it => it.indice == id)
+    })
+})
+
+app.get('/obtenerTransacciones',(req,res) => {
+    let transacciones = []
+    blockchain.cadena.forEach(bloque => {
+        transacciones.push(bloque.transacciones)
+    })
+
+    res.json(transacciones)
+})
+app.get('/obtenerTransaccion/:id',(req,res) => {
+
+    const id = req.params.id
+
+    blockchain.cadena.forEach(bloque => {
+        let tr = bloque.transacciones.find(it => it.hash == id)
+        if(tr != undefined){
+            res.json({
+                transaccion: tr
+            })
+        }
+    })
+
+    res.json(transacciones)
+})
+
 app.get('/validar', (req, res) => {
     let valida = blockchain.cadenaEsValida(blockchain.cadena)
     if(valida){
@@ -72,7 +108,7 @@ app.post('/anadirTransaccion', (req, res) => {
     })
 })
 
-app.post('/conectarNodo', (req, res) => {
+app.post('/anadirNodo', (req, res) => {
     let nodos = req.body.nodos
     if(nodos == undefined || nodos.length == 0){
         res.statusCode = 400
@@ -85,6 +121,54 @@ app.post('/conectarNodo', (req, res) => {
         mensaje: "Todos los nodos conectados",
         lista: Array.from(blockchain.nodos)
     })
+})
+
+/*
+app.post('/conectarRed', (req, res) => {
+    let mDir = req.body.mDir
+    let dirNodo = req.body.dirNodo
+    if(mDir == undefined || dirNodo == undefined){
+        res.statusCode = 400
+        res.json("Bad params")
+    }
+    axios.post(`${dirNodo}/anadirNodoRed`, {
+        newNodo : mDir
+    }).then((axiosRes) => {
+        console.log(axiosRes)
+        axiosRes.data.forEach(nodo => {
+            blockchain.anadirNodo(nodo)
+        })
+        blockchain.anadirNodo(dirNodo)
+        console.log(`Blockchain nodos: ${JSON.stringify(blockchain.nodos)}`)
+        res.json(blockchain.nodos)
+    })
+    
+})*/
+
+app.post('/anadirNodoRed', (req, res) => {
+    let newNodo = req.body.newNodo
+    console.log(`New nodo: ${newNodo}`)
+    blockchain.nodos.forEach(nodo => {
+        axios.post(`${nodo}/anadirNodo`, {
+            nodos: [
+                newNodo
+            ]
+        })
+    })
+    console.log(`Blockchain nodos: ${JSON.stringify(blockchain.nodos)}`)
+    let nodosCopy = []
+    blockchain.nodos.forEach(nodo => {
+        nodosCopy.push(nodo)
+    })
+    blockchain.anadirNodo(newNodo)
+    console.log(`Nodos copy: ${JSON.stringify(nodosCopy)}`)
+    res.json( 
+        nodosCopy
+    )
+})
+
+app.get('/getNodos', (req, res) => {
+    res.json(blockchain.nodos)
 })
 
 app.get('/reemplazarCadena', (req, res) => {
@@ -108,7 +192,7 @@ app.listen(PORT)
 
 
 async function run(){
-    const url = await ngrok.connect(50001)
+    const url = await ngrok.connect(PORT)
     nodeUrl = url
     console.log(url)
 }

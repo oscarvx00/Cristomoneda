@@ -76,7 +76,11 @@ module.exports = class Blockchain{
     }
 
     anadirTransaccion(emisor, receptor, moneymoney){
-        this.transacciones.push({'emisor': emisor, 'receptor': receptor, 'cantidad': moneymoney})
+        let transaccion  = {'emisor': emisor, 'receptor': receptor, 'cantidad': moneymoney}
+        let hash = sha256(JSON.stringify(transaccion) + (Math.random() + 1).toString(36).substring(7))
+        transaccion.hash = hash
+        this.transacciones.push(transaccion)
+
         let bloqueAnterior = this.bloqueAnteriorF()
         return bloqueAnterior.indice+1
     }
@@ -103,7 +107,6 @@ module.exports = class Blockchain{
                 cadenaMasLarga=cadena
             }
         }
-           
         if(cadenaMasLarga != undefined){
             this.cadena = cadenaMasLarga
             return true
