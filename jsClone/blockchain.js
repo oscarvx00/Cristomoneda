@@ -95,7 +95,13 @@ module.exports = class Blockchain{
         let cadenaMasLarga = undefined
         let longiMax = this.cadena.length
         for(let nodo of red){
-            const response = await axios.get(`${nodo}/obtenerCadena`) // formatear
+            let response
+            try{
+                response = await axios.get(`${nodo}/obtenerCadena`) // formatear
+            } catch (error) {
+                console.log(`Axios error --> ${error}`)
+                return false
+            }
             let tamanio = response.data.longitud // Comprobar
             console.log(`Tamaño cadena: ${tamanio}`)
             

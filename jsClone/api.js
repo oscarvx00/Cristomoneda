@@ -83,7 +83,10 @@ app.get('/obtenerTransaccion/:id',(req,res) => {
         }
     })
 
-    res.json(transacciones)
+    res.statusCode = 404
+    res.json({
+        message: "No se ha encontrado la transaccion"
+    })
 })
 
 app.get('/validar', (req, res) => {
